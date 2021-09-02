@@ -1,0 +1,23 @@
+{
+  "name": "demo-kuma",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/louislam/demo-kuma.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/louislam/demo-kuma/issues"
+  },
+  "homepage": "https://github.com/louislam/demo-kuma#readme",
+  "dependencies": {
+    "dotenv": "^10.0.0",
+    "express": "^4.17.1"
+  }
+}

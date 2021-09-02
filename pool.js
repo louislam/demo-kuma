@@ -1,22 +1,24 @@
 const child_process = require("child_process");
 const {getRandomInt, sleep} = require("./util");
+const isPortReachable = require('is-port-reachable');
 
 class Pool {
     portList = {};
 
-    constructor(startPort, endPort, execCommand, cwd, sessionTime = 300) {
+    constructor(startPort, endPort, execCommand, endCommand, cwd, sessionTime = 300) {
         this.startPort = startPort;
         this.endPort= endPort;
         this.execCommand = execCommand;
+        this.endCommand = endCommand;
         this.sessionTime = sessionTime;
         this.cwd = cwd;
     }
 
     async startInstance() {
         const port = await this.getFreePort();
-        const cmd = this.execCommand.replace("%PORT%", port);
+        const cmd = this.execCommand.replaceAll("%PORT%", port);
 
-        console.log("Baked Cmd: " + cmd);
+        console.log(`[${port}] Start a session`);
 
         try {
             const childProcess = child_process.exec(cmd, {
@@ -24,11 +26,11 @@ class Pool {
             });
 
             const timeout = setTimeout(() => {
-                console.log("Time up, call kill()")
-                childProcess.kill();
-            }, this.sessionTime * 1000);
+                console.log(`[${port}] Time up`);
+                childProcess.kill("SIGINT");
+            }, (this.sessionTime + 30) * 1000);     // Add some buffer for start/stop server
 
-            if (process.env.INSTANCE_LOG === "yes") {
+            if (process.env.INSTANCE_LOG === "all") {
                 childProcess.stdout.on('data', (data) => {
                     console.log(`${data}`);
                 });
@@ -39,13 +41,19 @@ class Pool {
             }
 
             childProcess.on('close', (code) => {
-                console.log(`child process close all stdio with code ${code}`);
+                //console.log(`child process close all stdio with code ${code}`);
             });
 
             childProcess.on('exit', (code) => {
+                console.log(`[${port}] exited with code ${code}`);
                 this.portList[port] = false;
                 clearTimeout(timeout);
-                console.log(`child process exited with code ${code}`);
+
+                const endCommand = this.endCommand.replaceAll("%PORT%", port);
+
+                child_process.execSync(endCommand, {
+                    cwd: this.cwd
+                });
             });
 
         } catch (e) {
@@ -53,6 +61,12 @@ class Pool {
             this.portList[port] = false;
         }
 
+        // When the port is opened, send to client
+        while (! await isPortReachable(port)) {
+            await sleep(200);
+        }
+
+        return port;
     }
 
     async getFreePort() {

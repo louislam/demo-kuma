@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Uptime Kuma Demo</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            font-family: sans-serif;
+        }
+
+        #main {
+            position:fixed; top:0; left:0; bottom:0; right:0; width:100%; height:100%; border:none; margin:0; padding:0; overflow:hidden;
+        }
+
+        div {
+            box-sizing: border-box;
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: white;
+            padding: 11px;
+            text-decoration: none;
+            margin: 5px 10px;
+            border-radius: 21px;
+            font-size: 21px;
+            color: black;
+        }
+
+        #overlay {
+            text-align: center;
+            width: 400px;
+            position: fixed;
+            top: calc(40% - 25px);
+            left: calc(50% - 200px);
+            font-size: 20px;
+            background-color: #61DE8F;
+            border: 9px solid #F8F8F8;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            backdrop-filter: blur(2.5em) saturate(1.8);
+            transition: all cubic-bezier(0.79, 0.14, 0.15, 0.86) 0.5s;
+        }
+
+        #overlay.bottom {
+            top: calc(100vh - 15px - 75px);
+            left: 15px;
+            width: initial;
+        }
+
+        @media (max-width: 500px) {
+            #overlay {
+                width: 350px;
+                left: calc(50% - 175px);
+            }
+
+            #overlay.bottom {
+                top: 15px;
+                font-size: 13px;
+                width: initial;
+                padding: 7px 15px;
+                border: none;
+            }
+        }
+    </style>
+
+    <% if (ga) { %>
+        <!-- Global site tag (gtag.js) - Google Analytics -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-KE7KCZE9H0"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+
+            gtag('config', <%-JSON.stringify(ga)%>);
+        </script>
+    <% } %>
+</head>
+<body>
+
+<iframe id="main"></iframe>
+
+<div id="overlay">
+    Preparing your demo, please wait...
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script>
+    $.ajaxSetup({
+        timeout: 120 * 1000
+    });
+
+    let sessionTime = <%-JSON.stringify(sessionTime)%>;
+
+    $(document).ready(function () {
+
+        // Resume previous session if not expired
+        if (localStorage.time && (Date.now() - localStorage.time) < sessionTime * 1000) {
+            $("#main").attr("src", localStorage.url);
+            $("#overlay").addClass("bottom");
+            startTimer(sessionTime - ((Date.now() - localStorage.time) / 1000));
+
+        } else {
+            $.post("/start", function (res) {
+                localStorage.time = Date.now();
+
+                var url = "https://" + window.location.hostname + ":" + res.port;
+                localStorage.url = url;
+
+                $("#main").attr("src", url);
+                $("#overlay").addClass("bottom");
+
+                startTimer(sessionTime);
+            });
+        }
+
+    });
+
+    function load(url) {
+        $.get(url, function () {
+
+        }).fail(function () {
+            console.log("try again..");
+            setTimeout(function () {
+                load(url);
+            }, 2000);
+        });
+    }
+
+    function startTimer(time) {
+        var timer = setInterval(function () {
+            if (time <= 1) {
+                clearInterval(timer);
+                $("#overlay")
+                    .removeClass("bottom")
+                    .html("Thank you for trying! Demo has Ended.<br /><a href='#' onclick='location.reload()' class='btn'>Retry</a><a href='<%=installURL%>'  class='btn'>Install</a>");
+                $("#main").fadeOut(3000);
+            } else {
+                time--;
+                $("#overlay").text("Demo Ends in " + new Date(time * 1000).toISOString().substr(14, 5));
+            }
+        }, 1000);
+    }
+</script>
+</body>
+</html>

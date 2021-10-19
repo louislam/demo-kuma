@@ -27,6 +27,13 @@ const certificate = fs.readFileSync(process.env.SSL_CERT);
 
 app.set('view engine', 'ejs');
 
+// Global Middleware
+app.use(function (req, res, next) {
+    res.setHeader("X-Frame-Options", "SAMEORIGIN");
+    res.removeHeader("X-Powered-By");
+    next();
+});
+
 app.get('/', async (req, res) => {
     res.render("index", {
         sessionTime,

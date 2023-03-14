@@ -43,11 +43,18 @@ app.get('/', async (req, res) => {
 });
 
 app.post('/start', async (req, res) => {
-    let port = await pool.startInstance();
-    res.send({
-        ok: true,
-        port
-    });
+    try {
+        let port = await pool.startInstance();
+        res.send({
+            ok: true,
+            port
+        });
+    } catch (e) {
+        res.send({
+            ok: false,
+            msg: e.message,
+        });
+    }
 });
 
 

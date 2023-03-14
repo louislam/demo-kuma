@@ -1,6 +1,7 @@
 const child_process = require("child_process");
 const {getRandomInt, sleep} = require("./util");
 const isPortReachable = require('is-port-reachable');
+const fs = require("fs");
 
 class Pool {
     portList = {};
@@ -15,6 +16,11 @@ class Pool {
     }
 
     async startInstance() {
+        // Check `lock` file exists
+        if (fs.existsSync("lock")) {
+            throw new Error("Server is locked");
+        }
+
         const port = await this.getFreePort();
         const cmd = this.execCommand.replaceAll("%PORT%", port);
 

@@ -108,15 +108,20 @@
 
         } else {
             $.post("/start", function (res) {
-                localStorage.time = Date.now();
+                if (res.ok) {
+                    localStorage.time = Date.now();
 
-                var url = "https://" + window.location.hostname + ":" + res.port;
-                localStorage.url = url;
+                    var url = "https://" + window.location.hostname + ":" + res.port;
+                    localStorage.url = url;
 
-                $("#main").attr("src", url);
-                $("#overlay").addClass("bottom");
+                    $("#main").attr("src", url);
+                    $("#overlay").addClass("bottom");
 
-                startTimer(sessionTime);
+                    startTimer(sessionTime);
+                } else {
+                    console.log(res);
+                    alert("We are updating the demo server to the new version. Please try again later.");
+                }
             });
         }
 

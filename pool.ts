@@ -1,14 +1,14 @@
-const child_process = require("child_process");
-const {getRandomInt, sleep} = require("./util");
-const isPortReachable = require('is-port-reachable');
-const fs = require("fs");
+import fs from "fs";
+import isPortReachable from "is-port-reachable";
+import child_process from "child_process";
+import { getRandomInt, sleep } from "./util";
 
-class Pool {
+export class Pool {
     portList = {};
 
     constructor(startPort, endPort, execCommand, endCommand, cwd, sessionTime = 300) {
         this.startPort = startPort;
-        this.endPort= endPort;
+        this.endPort = endPort;
         this.execCommand = execCommand;
         this.endCommand = endCommand;
         this.sessionTime = sessionTime;
@@ -37,20 +37,20 @@ class Pool {
             }, (this.sessionTime + 30) * 1000);     // Add some buffer for start/stop server
 
             if (process.env.INSTANCE_LOG === "all") {
-                childProcess.stdout.on('data', (data) => {
+                childProcess.stdout.on("data", (data) => {
                     console.log(`${data}`);
                 });
 
-                childProcess.stderr.on('data', (data) => {
+                childProcess.stderr.on("data", (data) => {
                     console.error(`${data}`);
                 });
             }
 
-            childProcess.on('close', (code) => {
+            childProcess.on("close", (code) => {
                 //console.log(`child process close all stdio with code ${code}`);
             });
 
-            childProcess.on('exit', (code) => {
+            childProcess.on("exit", (code) => {
                 console.log(`[${port}] exited with code ${code}`);
                 this.portList[port] = false;
                 clearTimeout(timeout);
@@ -94,4 +94,3 @@ class Pool {
     }
 }
 
-module.exports = Pool;

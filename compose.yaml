@@ -1,0 +1,35 @@
+services:
+  demo-kuma:
+    image: louislam/demo-kuma:2
+    restart: unless-stopped
+    ports:
+      - 27000:27000
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      -
+    environment:
+      - STACK_PREFIX=uptime-kuma
+      - SESSION_TIME=300
+      - PORT_START=27001
+      - PORT_END=27999
+
+      - GA=""
+      - INSTANCE_LOG=none
+
+  docker:
+
+
+  caddy:
+    image: caddy:latest
+    restart: unless-stopped
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile
+      - ./caddy/data:/data
+      - ./caddy/config:/config
+    environment:
+      - DOCKGE_STACKS_DIR=/opt/stacks
+      - DOCKGE_DOMAIN=example.com
+      -

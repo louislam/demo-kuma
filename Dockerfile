@@ -1,0 +1,3 @@
+FROM louislam/dockge:base
+
+

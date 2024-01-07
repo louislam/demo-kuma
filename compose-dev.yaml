@@ -4,10 +4,14 @@ services:
     restart: unless-stopped
     ports:
       - 3003:80
+    command: tsx watch --inspect ./server.ts
     volumes:
+      - ./:/app
       - /var/run/docker.sock:/var/run/docker.sock
       - ./compose-demo.yaml:/app/compose-demo.yaml
     environment:
+      - NODE_ENV=development
+
       # Demo Website Name
       - WEBSITE_NAME=Uptime Kuma Demo
 
@@ -25,10 +29,10 @@ services:
       - STACK_MAIN_SERVICE_ENTRY_PATH=/
 
       # Session Time (Seconds)
-      - SESSION_TIME=600
+      - SESSION_TIME=60
 
       # If the stack has not started in time, it will be considered as failed (Seconds)
-      - START_TIMEOUT=60
+      - START_TIMEOUT=10
 
       # Show Entry
       # If true, the entry will be shown in the demo page and the user has to click "Start Demo" to start the demo
@@ -41,12 +45,3 @@ services:
       # Docker Network Name
       # The demo instance must be in the same network as the demo-kuma
       - DOCKER_NETWORK_NAME=demo-kuma_default
-
-  # (Optional) Cloudflare Tunnel as a reverse proxy
-  # Remove this if you don't need it
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN}
-    restart: unless-stopped
-
-

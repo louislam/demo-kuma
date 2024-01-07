@@ -4,28 +4,33 @@
     "main": "server.js",
     "type": "module",
     "scripts": {
+        "dev": "docker-compose -f compose-dev.yaml up",
         "start": "tsx server.ts",
-        "build": ""
+        "build:docker-nightly": "docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t louislam/demo-kuma:nightly --target release -f Dockerfile . --push",
+        "build:docker": "docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t louislam/demo-kuma:2 --target release -f Dockerfile . --push"
     },
     "repository": {
         "type": "git",
         "url": "git+https://github.com/louislam/demo-kuma.git"
     },
-    "author": "",
+    "author": "Louis Lam",
     "license": "MIT",
     "bugs": {
         "url": "https://github.com/louislam/demo-kuma/issues"
     },
     "homepage": "https://github.com/louislam/demo-kuma#readme",
     "dependencies": {
-        "@types/node": "^20.10.4",
-        "dotenv": "^10.0.0",
-        "ejs": "^3.1.6",
-        "express": "^4.17.1",
-        "is-port-reachable": "^3.0.0"
+        "dotenv": "~10.0.0",
+        "ejs": "~3.1.9",
+        "http-graceful-shutdown": "~3.1.13",
+        "http-proxy": "~1.18.1",
+        "promisify-child-process": "~4.1.2",
+        "tsx": "~4.7.0"
     },
     "devDependencies": {
-        "@types/express": "^4.17.21",
+        "@types/ejs": "^3.1.5",
+        "@types/http-proxy": "^1.17.14",
+        "@types/node": "~20.10.6",
         "@typescript-eslint/eslint-plugin": "~6.8.0",
         "@typescript-eslint/parser": "~6.8.0",
         "concurrently": "^8.2.2",

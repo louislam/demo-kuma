@@ -1,0 +1,16 @@
+services:
+  # Main Service that you want to create a demo
+  main:
+    image: louislam/uptime-kuma:1
+    restart: no
+
+    # The network name should be the same as the one in compose.yaml, so that demo-kuma can find it and access it
+    # You should keep this
+    networks:
+      - demo-kuma_default
+
+networks:
+  # The network name should be the same as the one in compose.yaml, so that demo-kuma can find it and access it
+  # You should keep this
+  demo-kuma_default:
+    external: true

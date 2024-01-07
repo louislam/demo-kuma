@@ -1,94 +1,186 @@
-import fs from "fs";
-import isPortReachable from "is-port-reachable";
-import child_process from "child_process";
-import { getRandomInt, sleep } from "./util";
+import childProcess from "child_process";
+import childProcessAsync from "promisify-child-process";
+import { sleep } from "./util";
+import crypto from "crypto";
+import { sessionTime, stackPrefix, startTimeout, servicePort, entryPath, dockerNetwork, serviceName } from "./config";
 
 export class Pool {
-    portList = {};
-
-    constructor(startPort, endPort, execCommand, endCommand, cwd, sessionTime = 300) {
-        this.startPort = startPort;
-        this.endPort = endPort;
-        this.execCommand = execCommand;
-        this.endCommand = endCommand;
-        this.sessionTime = sessionTime;
-        this.cwd = cwd;
-    }
+    /**
+     * sessionList[sessionID] = serviceURL
+     */
+    sessionList: Record<string, string> = {};
 
     async startInstance() {
-        // Check `lock` file exists
-        if (fs.existsSync("lock")) {
-            throw new Error("Server is locked");
+        let sessionID : string = "";
+
+        while (true) {
+            sessionID = crypto.randomUUID().substring(0, 8);
+            if (this.sessionList[sessionID] === undefined) {
+                break;
+            }
         }
 
-        const port = await this.getFreePort();
-        const cmd = this.execCommand.replaceAll("%PORT%", port);
+        let timeout : NodeJS.Timeout;
 
-        console.log(`[${port}] Start a session`);
+        console.log(`[${sessionID}] Start a session`);
 
-        try {
-            const childProcess = child_process.exec(cmd, {
-                cwd: this.cwd
-            });
+        await childProcessAsync.spawn("docker", [
+            "compose",
+            "--file", "compose-demo.yaml",
+            "-p", `${stackPrefix}-${sessionID}`,
+            "up",
+            "-d",
+        ], {
+            encoding: "utf-8",
+        });
 
-            const timeout = setTimeout(() => {
-                console.log(`[${port}] Time up`);
-                childProcess.kill("SIGINT");
-            }, (this.sessionTime + 30) * 1000);     // Add some buffer for start/stop server
+        let startStackTime = Date.now();
+        let baseURL = "";
 
-            if (process.env.INSTANCE_LOG === "all") {
-                childProcess.stdout.on("data", (data) => {
-                    console.log(`${data}`);
-                });
+        // Wait until the service is opened
+        while (true) {
+            try {
+                let ip = await this.getServiceIP(sessionID);
+                baseURL = `http://${ip}:${servicePort}`;
+                let entryURL = baseURL + entryPath;
 
-                childProcess.stderr.on("data", (data) => {
-                    console.error(`${data}`);
-                });
+                console.log("Checking entry: " + entryURL);
+
+                // Try to access the index page
+                let res = await fetch(entryURL);
+                await res.text();
+
+                if (res.status === 200) {
+                    break;
+                }
+            } catch (e) {
             }
 
-            childProcess.on("close", (code) => {
-                //console.log(`child process close all stdio with code ${code}`);
-            });
-
-            childProcess.on("exit", (code) => {
-                console.log(`[${port}] exited with code ${code}`);
-                this.portList[port] = false;
-                clearTimeout(timeout);
-
-                const endCommand = this.endCommand.replaceAll("%PORT%", port);
-
-                child_process.execSync(endCommand, {
-                    cwd: this.cwd
-                });
-            });
-
-        } catch (e) {
-            console.error(e);
-            this.portList[port] = false;
+            await sleep(2000);
+            if (Date.now() - startStackTime > startTimeout * 1000) {
+                throw new Error("Start instance timeout");
+            }
         }
 
-        // When the port is opened, send to client
-        while (! await isPortReachable(port)) {
-            await sleep(200);
-        }
+        let endSessionTime = Date.now() + sessionTime * 1000;
 
-        return port;
+        // Timer for closing the session
+        setTimeout(async () => {
+            console.log(`[${sessionID}] Time up`);
+            await this.stopInstance(sessionID);
+            delete this.sessionList[sessionID];
+        }, (sessionTime) * 1000);
+
+        this.sessionList[sessionID] = baseURL;
+        console.log(`[${sessionID}] Session started`);
+
+        return {
+            sessionID,
+            endSessionTime,
+        };
     }
 
-    async getFreePort() {
-        while (true) {
-            const port = getRandomInt(this.startPort, this.endPort);
+    async stopInstance(sessionID : string) {
+        await childProcessAsync.spawn("docker", [
+            "compose",
+            "-f", "compose-demo.yaml",
+            "-p", `${stackPrefix}-${sessionID}`,
+            "down",
+        ], {
+            encoding: "utf-8",
+            env: {
+                ...process.env,
+            },
+        });
+    }
 
-            if (! this.portList[port]) {
-                this.portList[port] = true;
-                return port;
-            } else {
+    getServiceURL(sessionID : string) : string | undefined {
+        return this.sessionList[sessionID];
+    }
 
-                // If full, sleep 1 second
-                if (Object.keys(this.portList).length >= (this.endPort - this.startPort)) {
-                    await sleep(1000);
+    async getServiceIP(sessionID : string) : Promise<string> {
+        let response = await childProcessAsync.spawn("docker", [
+            "inspect",
+            `${stackPrefix}-${sessionID}-${serviceName}-1`,
+            "--format", "json"
+        ], {
+            encoding: "utf-8",
+        });
+
+        if (typeof response.stdout !== "string") {
+            throw new Error("No output");
+        }
+
+        let array = JSON.parse(response.stdout);
+
+        if (!Array.isArray(array)) {
+            throw new Error("Not an array");
+        }
+
+        if (array.length === 0) {
+            throw new Error("Array is empty");
+        }
+
+        let obj = array[0];
+
+        // Check if the object is valid
+        if (!obj || typeof obj !== "object") {
+            throw new Error("Not an object");
+        }
+
+        let networkSettings = obj.NetworkSettings;
+
+        if (!networkSettings) {
+            throw new Error("No network settings");
+        }
+
+        let networks = obj.NetworkSettings.Networks;
+
+        if (!networks) {
+            throw new Error("No networks");
+        }
+
+        // Find the target network
+        let network = networks[dockerNetwork];
+
+        if (!network) {
+            throw new Error("Network not found");
+        }
+
+        let ip = network.IPAddress;
+
+        if (!ip) {
+            throw new Error("IP not found");
+        }
+
+        return ip;
+    }
+
+    async clearInstance() {
+        let result = await childProcessAsync.spawn("docker", [
+            "compose",
+            "ls",
+            "--format", "json",
+        ], {
+            encoding: "utf-8",
+        });
+
+        if (typeof result.stdout === "string") {
+            let list = JSON.parse(result.stdout);
+            for (let stack of list) {
+                if (stack.Name?.startsWith(stackPrefix + "-")) {
+                    console.log(`Clearing ${stack.Name}`);
+                    let result = await childProcessAsync.spawn("docker", [
+                        "compose",
+                        "--file", "compose-demo.yaml",
+                        "-p", stack.Name,
+                        "down",
+                    ], {
+                        encoding: "utf-8",
+                    });
+
+                    console.log(result.stdout, result.stderr);
                 }
-
             }
         }
     }

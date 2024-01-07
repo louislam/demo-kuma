@@ -107,6 +107,3 @@ dist
 .tern-port
 
 /private
-/lock
-/lock2
-/data

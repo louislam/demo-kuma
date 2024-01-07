@@ -13,7 +13,7 @@ https://exercisediary-demo.kuma.pet/start-demo
 ## Features
 
 - Quickly create a demo for your project.
-- Spin up a docker stack when requested, shut down the stack when it is time up.
+- Spin up a docker stack when requested, shut down the stack when time is up.
 - A countdown timer at the bottom right corner.
 - Custom demo duration.
 - Portless demo instances design in v2, you just need one port for Demo Kuma.
@@ -31,4 +31,4 @@ https://exercisediary-demo.kuma.pet/start-demo
 1. User requests a demo via a browser
 1. Demo Kuma assign a session ID for this request and spin up the stack `compose-demo.yaml`
 1. Once the demo stack is started, Demo Kuma will act as a reverse proxy to communicate between the browser and the demo stack.
-1. The timer will be created at the same time. When time up, Demo Kuma will shut down the stack.
+1. The timer will be created at the same time. When time is up, Demo Kuma will shut down the stack.

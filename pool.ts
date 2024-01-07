@@ -66,7 +66,7 @@ export class Pool {
 
         // Timer for closing the session
         setTimeout(async () => {
-            console.log(`[${sessionID}] Time up`);
+            console.log(`[${sessionID}] Time's up`);
             await this.stopInstance(sessionID);
             delete this.sessionList[sessionID];
         }, (sessionTime) * 1000);
@@ -86,6 +86,8 @@ export class Pool {
             "-f", "compose-demo.yaml",
             "-p", `${stackPrefix}-${sessionID}`,
             "down",
+            "--volumes",
+            "--remove-orphans",
         ], {
             encoding: "utf-8",
             env: {

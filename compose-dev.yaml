@@ -8,7 +8,6 @@ services:
     volumes:
       - ./:/app
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./compose-demo.yaml:/app/compose-demo.yaml
     environment:
       - NODE_ENV=development
 

@@ -1,6 +1,6 @@
 services:
   demo-kuma:
-    image: louislam/demo-kuma:nightly
+    image: louislam/demo-kuma:2
     restart: unless-stopped
     ports:
       - 3003:80

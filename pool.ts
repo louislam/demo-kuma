@@ -177,6 +177,8 @@ export class Pool {
                         "--file", "compose-demo.yaml",
                         "-p", stack.Name,
                         "down",
+                        "--volumes",
+                        "--remove-orphans",
                     ], {
                         encoding: "utf-8",
                     });

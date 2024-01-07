@@ -5,7 +5,7 @@ Create a demo site for your Docker based web application.
 Live Demo (Uptime Kuma):
 https://demo.kuma.pet/start-demo
 
-ExerciseDiary (2 mins demo) - Another demo which I found on Reddit:
+ExerciseDiary (2 mins demo) - Another selfhosted app which I found on Reddit:
 https://exercisediary-demo.kuma.pet/start-demo
 
 

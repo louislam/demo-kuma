@@ -14,6 +14,7 @@ https://exercisediary-demo.kuma.pet/start-demo
 
 - Quickly create a demo for your project.
 - Spin up a docker stack when requested, shut down the stack when it is time up.
+- A countdown timer at the bottom right corner.
 - Custom demo duration.
 - Portless demo instances design in v2, you just need one port for Demo Kuma.
 

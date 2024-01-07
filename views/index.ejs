@@ -1,157 +1,160 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Uptime Kuma Demo</title>
+    <title><%= websiteName %></title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-    <style>
-        html, body {
-            margin: 0;
-            padding: 0;
-            font-family: sans-serif;
-        }
-
-        #main {
-            position:fixed; top:0; left:0; bottom:0; right:0; width:100%; height:100%; border:none; margin:0; padding:0; overflow:hidden;
-        }
-
-        div {
-            box-sizing: border-box;
-        }
-
-        .btn {
-            display: inline-block;
-            background-color: white;
-            padding: 11px;
-            text-decoration: none;
-            margin: 5px 10px;
-            border-radius: 21px;
-            font-size: 21px;
-            color: black;
-        }
-
-        #overlay {
-            text-align: center;
-            width: 400px;
-            position: fixed;
-            top: calc(40% - 25px);
-            left: calc(50% - 200px);
-            font-size: 16px;
-            opacity: 0.3;
-            background-color: #61DE8F;
-            border: 9px solid #F8F8F8;
-            color: white;
-            padding: 15px 30px;
-            border-radius: 50px;
-            backdrop-filter: blur(2.5em) saturate(1.8);
-            transition: all cubic-bezier(0.79, 0.14, 0.15, 0.86) 0.5s;
-        }
-
-        #overlay.bottom {
-            top: 0;
-            left: calc(50% - 111px);
-            width: initial;
-        }
-
-        @media (max-width: 500px) {
-            #overlay {
-                width: 350px;
-                left: calc(50% - 175px);
-            }
-
-            #overlay.bottom {
-                top: 15px;
-                font-size: 13px;
-                width: initial;
-                padding: 7px 15px;
-                border: none;
-            }
-        }
-    </style>
-
-    <% if (ga) { %>
-        <!-- Global site tag (gtag.js) - Google Analytics -->
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-KE7KCZE9H0"></script>
-        <script>
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-
-            gtag('config', <%-JSON.stringify(ga)%>);
-        </script>
-    <% } %>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" type="text/css"  href="/demo-kuma/main.css" />
 </head>
 <body>
 
-<iframe id="main"></iframe>
+<div id="app" v-cloak>
 
-<div id="overlay">
-    Preparing your demo, please wait...
+    <div class="main" v-if="!iframeSrc">
+        <div class="entry"  v-if="showEntry">
+            <h2><%= websiteName %></h2>
+            <p class="mt-4">
+                This is a demo of <%= websiteName %>. You can use this demo to try out the software before installing it on your own server.
+            </p>
+            <button class="btn btn-primary btn-big" @click="start">Start Demo</button>
+        </div>
+
+        <div v-if="showEnd">
+            <h2>Demo has Ended</h2>
+            <p class="mt-4">
+                Your demo has ended, you can start a new demo by refreshing the page.
+            </p>
+            <a href="<%= installURL %>" class="btn btn-primary">Install now</a>
+        </div>
+
+        <div class="loading" v-if="loading">
+            Preparing your demo, please wait...
+        </div>
+
+    </div>
+
+    <div class="fixed" v-if="showFixed">
+        {{ countdown }} <a href="<%= installURL %>" target="_blank">Install now</a>
+    </div>
+
+    <iframe :src="iframeSrc" v-if="iframeSrc"></iframe>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.2/vue.global.prod.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
-    $.ajaxSetup({
-        timeout: 120 * 1000
-    });
+    const autoStart = <%- JSON.stringify(autoStart) %>;
+    let entryPath = <%- JSON.stringify(entryPath) %>;
+    let timer;
 
-    let sessionTime = <%-JSON.stringify(sessionTime)%>;
-
-    $(document).ready(function () {
-
-        // Resume previous session if not expired
-        if (localStorage.time && (Date.now() - localStorage.time) < sessionTime * 1000) {
-            $("#main").attr("src", localStorage.url);
-            $("#overlay").addClass("bottom");
-            startTimer(sessionTime - ((Date.now() - localStorage.time) / 1000));
-
-        } else {
-            $.post("/start", function (res) {
-                if (res.ok) {
-                    localStorage.time = Date.now();
-
-                    var url = "https://" + window.location.hostname + ":" + res.port;
-                    localStorage.url = url;
-
-                    $("#main").attr("src", url);
-                    $("#overlay").addClass("bottom");
-
-                    startTimer(sessionTime);
-                } else {
-                    console.log(res);
-                    alert("We are updating the demo server to the new version. Please try again later.");
-                }
-            });
-        }
-
-    });
-
-    function load(url) {
-        $.get(url, function () {
-
-        }).fail(function () {
-            console.log("try again..");
-            setTimeout(function () {
-                load(url);
-            }, 2000);
-        });
-    }
-
-    function startTimer(time) {
-        var timer = setInterval(function () {
-            if (time <= 1) {
-                clearInterval(timer);
-                $("#overlay")
-                    .removeClass("bottom")
-                    .html("Thank you for trying! Demo has Ended.<br /><a href='#' onclick='location.reload()' class='btn'>Retry</a><a href='<%=installURL%>'  class='btn'>Install</a>");
-                $("#main").fadeOut(3000);
-            } else {
-                time--;
-                $("#overlay").text("Demo Ends in " + new Date(time * 1000).toISOString().substr(14, 5));
+    const { createApp } = Vue;
+    createApp({
+        data() {
+            return {
+                showEntry: false,
+                loading: false,
+                iframeSrc: "",
+                countdown: "00:00",
+                showFixed: false,
+                showEnd: false,
             }
-        }, 1000);
-    }
+        },
+        computed: {
+
+        },
+        async mounted() {
+            console.info("Mounted");
+
+            // If session-id cookie is set, we can skip the entry screen
+            if (document.cookie.indexOf("session-id") !== -1) {
+                // Check if the session-id is still valid
+                try {
+                    let res = await fetch("/demo-kuma/validate-session");
+                    let obj = await res.json();
+                    if (obj.ok) {
+                        this.showEntry = false;
+                        this.iframeSrc = entryPath;
+                        this.startTimer();
+                    } else {
+                        this.entryAction();
+                    }
+                } catch (e) {
+                    this.entryAction();
+                }
+            } else {
+                this.entryAction();
+            }
+        },
+        methods: {
+            entryAction() {
+                if (autoStart) {
+                    this.start();
+                } else {
+                    this.showEntry = true;
+                }
+            },
+
+            async start() {
+                this.showEntry = false;
+                this.loading = true;
+
+                try {
+                    let res = await fetch("/demo-kuma/start-instance");
+                    let obj = await res.json();
+
+                    if (res.status === 200 && obj.ok) {
+                        this.loading = false;
+                        this.iframeSrc = entryPath;
+
+                        localStorage.setItem("endSessionTime", obj.endSessionTime);
+                        this.startTimer();
+
+                    } else {
+                        this.loading = false;
+                        alert("Error starting demo, please try again later.");
+                        this.showEntry = true;
+                    }
+                } catch (e) {
+                    this.loading = false;
+                    alert("Error starting demo, please try again later.");
+                    this.showEntry = true;
+                }
+
+            },
+
+            startTimer() {
+                if (timer) {
+                    return;
+                }
+
+                this.showFixed = true;
+                let endSessionTime = localStorage.getItem("endSessionTime");
+
+
+                timer = setInterval(() => {
+                    let now = Date.now();
+                    let distance = endSessionTime - now;
+
+                    console.log(distance)
+
+                    let minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)) + "";
+                    let seconds = Math.floor((distance % (1000 * 60)) / 1000) + "";
+
+                    this.countdown = minutes.padStart(2, "0") + ":" + seconds.padStart(2, "0");
+
+                    if (distance <= 0) {
+                        clearInterval(timer);
+                        this.countdown = "00:00";
+                        this.iframeSrc = "";
+                        this.showEnd = true;
+                        this.showFixed = false;
+                    }
+                }, 1000);
+            },
+        }
+    }).mount('#app');
 </script>
+
 </body>
 </html>

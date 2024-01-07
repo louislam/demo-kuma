@@ -1,0 +1,46 @@
+services:
+  demo-kuma:
+    image: louislam/demo-kuma:nightly
+    restart: unless-stopped
+    ports:
+      - 3003:80
+    command: tsx watch --inspect ./server.ts
+    volumes:
+      - ./:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - NODE_ENV=development
+
+      # Demo Website Name
+      - WEBSITE_NAME=Uptime Kuma Demo
+
+      # Stack Prefix (Should a special prefix, because demo-kuma will manage (start/shutdown) all stacks with this)
+      - STACK_PREFIX=uptime-kuma-demo
+
+      # Specify the service name of the stack
+      - STACK_MAIN_SERVICE_NAME=main
+
+      # Specify the port of the service
+      - STACK_MAIN_SERVICE_PORT=3001
+
+      # The entry path of the demo
+      # Should be start with /
+      - STACK_MAIN_SERVICE_ENTRY_PATH=/
+
+      # Session Time (Seconds)
+      - SESSION_TIME=60
+
+      # If the stack has not started in time, it will be considered as failed (Seconds)
+      - START_TIMEOUT=10
+
+      # Show Entry
+      # If true, the entry will be shown in the demo page and the user has to click "Start Demo" to start the demo
+      # true / false
+      - SHOW_ENTRY=false
+
+      # Install URL for the "Install now" button
+      - INSTALL_URL=https://github.com/louislam/uptime-kuma
+
+      # Docker Network Name
+      # The demo instance must be in the same network as the demo-kuma
+      - DOCKER_NETWORK_NAME=demo-kuma_default

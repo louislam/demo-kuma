@@ -1,0 +1,48 @@
+html, body {
+    margin: 0;
+    overflow: hidden;
+}
+
+body {
+    font-family: BlinkMacSystemFont, segoe ui, Roboto, helvetica neue, Arial, noto sans, sans-serif, apple color emoji, segoe ui emoji, segoe ui symbol, noto color emoji;
+    font-size: 15px;
+    color: #F0F6FC;
+    text-align: center;
+    background-color: #090C10;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #74c2ff 0%, #74c2ff 75%, #86e6a9);
+    border-color: #54DC8C;
+    border-radius: 50rem !important;
+    color: black;
+
+    &:hover {
+        border-color: #54DC8C;
+        color: black;
+    }
+}
+
+iframe {
+    width: 100%;
+    height: 100vh;
+    border: 0;
+    margin: 0;
+    padding: 0;
+}
+
+.main {
+    height: 100vh;
+    display: flex;
+    // center
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.fixed {
+    background-color: rgba(0, 0, 0, 0.5);
+    position: fixed;
+    bottom: 15px;
+    right: 15px;
+}

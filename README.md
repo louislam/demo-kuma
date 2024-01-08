@@ -20,10 +20,15 @@ https://exercisediary-demo.kuma.pet/start-demo
 
 ## How to use
 
-1. mkdir `demo-kuma`
-1. Download `compose.yaml` and `compose-demo.yaml` into the directory
-1. `docker compose up -d`
-1. Go to http://localhost:3003/start-demo
+1. Create a stack directory `demo-kuma`.
+1. Download `compose.yaml` and `compose-demo.yaml` into the directory.
+   - `compose.yaml` = Demo Kuma stack
+     - You should go through all variables in the `environment:` section.
+   - `compose-demo.yaml` = The stack that you want to provide a demo
+     - By default, the main service should be `main` and the network name should be `demo-kuma_default`.
+     - If your stack name is not `demo-kuma`, you should change the network name to `{your-name}_default` 
+1. `docker compose up -d`.
+1. Go to http://localhost:3003/start-demo to test the demo.
 
 ## How it works?
 

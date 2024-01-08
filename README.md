@@ -38,3 +38,8 @@ https://exercisediary-demo.kuma.pet/start-demo
 1. Demo Kuma assign a session ID for this request and spin up the stack `compose-demo.yaml`
 1. Once the demo stack is started, Demo Kuma will act as a reverse proxy to communicate between the browser and the demo stack.
 1. The timer will be created at the same time. When time is up, Demo Kuma will shut down the stack.
+
+# More screenshots
+
+![image](https://github.com/louislam/demo-kuma/assets/1336778/c264c86a-0718-42af-a91b-20db061af7db)
+

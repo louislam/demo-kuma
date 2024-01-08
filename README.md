@@ -8,6 +8,7 @@ https://demo.kuma.pet/start-demo
 ExerciseDiary (2 mins demo) - Another selfhosted app which I found on Reddit:
 https://exercisediary-demo.kuma.pet/start-demo
 
+![image](https://github.com/louislam/demo-kuma/assets/1336778/f15b5e46-5c98-419e-98e4-a2d52b91780c)
 
 
 ## Features

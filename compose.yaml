@@ -12,6 +12,7 @@ services:
       - WEBSITE_NAME=Uptime Kuma Demo
 
       # Stack Prefix (Should a special prefix, because demo-kuma will manage (start/shutdown) all stacks with this)
+      # PS: The prefix should not match any existing stack name including demo-kuma itself, otherwise it will be closed itself.
       - STACK_PREFIX=uptime-kuma-demo
 
       # Specify the service name of the stack

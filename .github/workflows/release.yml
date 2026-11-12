@@ -1,0 +1,147 @@
+name: Release
+
+# Build and push the multi-arch Docker image for a version.
+#
+# Usage: Actions -> Release -> Run workflow, enter the version (e.g. 3.0.0).
+# Pushed tags: 3.0.0, 3 and latest (latest is skipped when a tag suffix is set).
+# Set `push` to false to only verify that the image builds.
+#
+# Secrets: DOCKERHUB_USERNAME and DOCKERHUB_TOKEN are required for pushing.
+
+on:
+    workflow_dispatch:
+        inputs:
+            version:
+                description: "Version to release (MAJOR.MINOR.PATCH, e.g. 2.1.0)"
+                required: true
+                type: string
+            push:
+                description: "Push the image to Docker Hub"
+                required: false
+                type: boolean
+                default: true
+            github_release:
+                description: "Create the v<version> git tag and GitHub release after pushing"
+                required: false
+                type: boolean
+                default: true
+            platforms:
+                description: "Target platforms"
+                required: false
+                type: string
+                default: "linux/amd64,linux/arm64"
+            tag_suffix:
+                description: "Tag suffix for test builds, e.g. test (pushed as 2.1.0-test). Also skips latest"
+                required: false
+                type: string
+                default: ""
+
+concurrency:
+    group: release-${{ inputs.tag_suffix || 'publish' }}
+    cancel-in-progress: false
+
+permissions:
+    contents: write
+    packages: write
+
+jobs:
+    prepare:
+        runs-on: ubuntu-latest
+        outputs:
+            version: ${{ steps.tags.outputs.version }}
+            tags: ${{ steps.tags.outputs.tags }}
+        steps:
+            - name: Validate version and compute tags
+              id: tags
+              env:
+                  VERSION: ${{ inputs.version }}
+                  SUFFIX: ${{ inputs.tag_suffix }}
+                  PUSH: ${{ inputs.push }}
+              run: |
+                  if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                      echo "::error::'$VERSION' is not MAJOR.MINOR.PATCH"
+                      exit 1
+                  fi
+
+                  image=louislam/demo-kuma
+                  major=${VERSION%%.*}
+
+                  {
+                      echo "version=$VERSION"
+                      echo "tags<<TAGS"
+                      # A dry run loads a single image, and a loaded image can only carry one tag
+                      if [ "$PUSH" != "true" ]; then
+                          echo "$image:dryrun"
+                      else
+                          echo "$image:$VERSION$SUFFIX"
+                          echo "$image:$major$SUFFIX"
+                          # latest only for a real release, never for a suffixed test build
+                          if [ -z "$SUFFIX" ]; then
+                              echo "$image:latest"
+                          fi
+                      fi
+                      echo "TAGS"
+                  } >> "$GITHUB_OUTPUT"
+
+    docker:
+        needs: prepare
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
+
+            - name: Set up QEMU
+              uses: docker/setup-qemu-action@v3
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v3
+
+            - name: Log in to Docker Hub
+              if: inputs.push
+              uses: docker/login-action@v3
+              with:
+                  username: ${{ secrets.DOCKERHUB_USERNAME }}
+                  password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+            - name: Build and push
+              uses: docker/build-push-action@v6
+              with:
+                  context: .
+                  target: release
+                  platforms: ${{ inputs.push && inputs.platforms || 'linux/amd64' }}
+                  push: ${{ inputs.push }}
+                  # A dry run loads the image so the check below can inspect it
+                  load: ${{ !inputs.push }}
+                  tags: ${{ needs.prepare.outputs.tags }}
+                  cache-from: type=gha
+                  cache-to: type=gha,mode=max
+
+            - name: Check Node.js and docker compose in the image
+              if: ${{ !inputs.push }}
+              env:
+                  IMAGE: ${{ needs.prepare.outputs.tags }}
+              run: |
+                  docker run --rm --entrypoint node "$IMAGE" -v
+                  docker run --rm --entrypoint docker "$IMAGE" compose version
+
+    github-release:
+        needs: [prepare, docker]
+        if: ${{ inputs.push && inputs.github_release && !cancelled() && !failure() }}
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
+
+            - name: Create tag and release
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  VERSION: ${{ needs.prepare.outputs.version }}
+              run: |
+                  if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+                      echo "::error::tag v$VERSION already exists"
+                      exit 1
+                  fi
+                  gh release create "v$VERSION" \
+                      --target "$GITHUB_SHA" \
+                      --title "v$VERSION" \
+                      --notes "Docker image: \`louislam/demo-kuma:$VERSION\`, \`:${VERSION%%.*}\` and \`:latest\`"

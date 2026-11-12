@@ -1,10 +1,12 @@
 ############################################
 # ⭐ Main Image
 ############################################
-FROM louislam/dockge:base AS release
+FROM node:26-alpine AS release
 WORKDIR /app
-COPY --chown=node:node  . .
-RUN npm ci --production
+# Demo Kuma shells out to `docker compose` to start/stop the demo stacks
+RUN apk add --no-cache docker-cli docker-cli-compose dumb-init
+COPY --chown=node:node . .
+RUN npm ci --omit=dev
 EXPOSE 80
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
-CMD ["tsx", "./server.ts"]
+CMD ["node_modules/.bin/tsx", "./server.ts"]

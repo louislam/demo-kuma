@@ -1,13 +1,13 @@
 {
     "name": "demo-kuma",
-    "version": "2.0.0",
+    "version": "3.0.0",
     "main": "server.js",
     "type": "module",
     "scripts": {
         "dev": "docker-compose -f compose-dev.yaml up",
         "start": "tsx server.ts",
-        "build:docker-nightly": "docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t louislam/demo-kuma:nightly --target release -f Dockerfile . --push",
-        "build:docker": "docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t louislam/demo-kuma:2 --target release -f Dockerfile . --push"
+        "build:docker-nightly": "docker buildx build --platform linux/amd64,linux/arm64 -t louislam/demo-kuma:nightly --target release -f Dockerfile . --push",
+        "build:docker": "docker buildx build --platform linux/amd64,linux/arm64 -t louislam/demo-kuma:2 --target release -f Dockerfile . --push"
     },
     "repository": {
         "type": "git",
@@ -25,12 +25,12 @@
         "http-graceful-shutdown": "~3.1.13",
         "http-proxy": "~1.18.1",
         "promisify-child-process": "~4.1.2",
-        "tsx": "~4.7.0"
+        "tsx": "~4.23.15"
     },
     "devDependencies": {
         "@types/ejs": "^3.1.5",
         "@types/http-proxy": "^1.17.14",
-        "@types/node": "~20.10.6",
+        "@types/node": "~26.6.6",
         "@typescript-eslint/eslint-plugin": "~6.8.0",
         "@typescript-eslint/parser": "~6.8.0",
         "concurrently": "^8.2.2",

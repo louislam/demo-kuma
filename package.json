@@ -7,7 +7,7 @@
         "dev": "docker-compose -f compose-dev.yaml up",
         "start": "tsx server.ts",
         "build:docker-nightly": "docker buildx build --platform linux/amd64,linux/arm64 -t louislam/demo-kuma:nightly --target release -f Dockerfile . --push",
-        "build:docker": "docker buildx build --platform linux/amd64,linux/arm64 -t louislam/demo-kuma:2 --target release -f Dockerfile . --push"
+        "build:docker": "docker buildx build --platform linux/amd64,linux/arm64 -t louislam/demo-kuma:3 --target release -f Dockerfile . --push"
     },
     "repository": {
         "type": "git",

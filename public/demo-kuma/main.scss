@@ -23,16 +23,22 @@ body {
     }
 }
 
+%full-height {
+    height: 100vh;
+    height: -webkit-fill-available;
+    height: 100dvh;
+}
+
 iframe {
     width: 100%;
-    height: 100vh;
+    @extend %full-height;
     border: 0;
     margin: 0;
     padding: 0;
 }
 
 .main {
-    height: 100vh;
+    @extend %full-height;
     display: flex;
     // center
     justify-content: center;
